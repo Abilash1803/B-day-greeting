@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#180c2c">
+  <meta name="description" content="A magical, interactive birthday surprise crafted with love. 🎂✨">
+  <title>A Special Surprise For You ✨</title>
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Ambience & Canvas -->
+  <canvas id="particleCanvas"></canvas>
+  <div class="ambient-stars" id="ambientStars"></div>
+  <div class="ambient-mesh">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+  </div>
+
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="header-inner">
+      <!-- Journey Progress Indicator -->
+      <nav class="journey-nav" aria-label="Surprise progress">
+        <div class="journey-step active" data-step="sceneLanding">
+          <span class="step-dot"></span>
+          <span class="step-text">Intro</span>
+        </div>
+        <div class="journey-line"></div>
+        <div class="journey-step" data-step="sceneBalloons">
+          <span class="step-dot"></span>
+          <span class="step-text">Balloons</span>
+        </div>
+        <div class="journey-line"></div>
+        <div class="journey-step" data-step="sceneCake">
+          <span class="step-dot"></span>
+          <span class="step-text">Cake</span>
+        </div>
+        <div class="journey-line"></div>
+        <div class="journey-step" data-step="sceneMemories">
+          <span class="step-dot"></span>
+          <span class="step-text">Memories</span>
+        </div>
+      </nav>
+
+      <!-- Sound Controls -->
+      <div class="audio-controls">
+        <button id="musicToggleBtn" class="glass-pill-btn music-btn" aria-label="Toggle background music">
+          <span class="music-icon">🎵</span>
+          <span id="musicStatusText">Music: On</span>
+        </button>
+        <button id="soundFxBtn" class="glass-pill-btn fx-btn" aria-label="Toggle sound effects">
+          <span class="fx-icon">🔊</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Responsive Container -->
+  <main class="app-container">
+
+    <!-- ==============================================
+         SCENE 1: LANDING / INTERACTIVE 3D GIFT BOX
+         ============================================== -->
+    <section id="sceneLanding" class="scene active">
+      <div class="landing-grid">
+        <div class="landing-content">
+          <div class="badge-pill animate-fade-in">
+            <span class="badge-sparkle">✨</span>
+            <span id="cfgTagline">A Special Delivery Just For You</span>
+          </div>
+
+          <h1 class="hero-heading">
+            Happy Birthday,<br>
+            <span class="hero-name-gradient" id="displayRecipientName">Sarah</span>! 🎂
+          </h1>
+
+          <p class="hero-description" id="cfgSubtitle">
+            Someone wrapped up a world of smiles, sweet memories, and a special wish today. Tap the gift box to unlock what's waiting inside...
+          </p>
+
+          <div class="interactive-hint">
+            <span class="hint-pulse"></span>
+            <span>Tap or click the gift box to unwrap</span>
+          </div>
+        </div>
+
+        <div class="landing-interactive">
+          <!-- 3D Interactive Gift Box -->
+          <div class="gift-box-3d" id="giftBoxTrigger" role="button" tabindex="0" aria-label="Unwrap your birthday gift">
+            <div class="gift-aura"></div>
+            
+            <!-- Light beam radiating out when opening -->
+            <div class="gift-light-beam" id="giftLightBeam"></div>
+
+            <div class="gift-3d-model">
+              <!-- Lid with 3D ribbon bow -->
+              <div class="gift-lid-wrap" id="giftLid">
+                <div class="ribbon-bow">
+                  <div class="bow-loop loop-left"></div>
+                  <div class="bow-loop loop-right"></div>
+                  <div class="bow-center"></div>
+                </div>
+                <div class="gift-lid-cap"></div>
+                <div class="lid-ribbon-cross"></div>
+              </div>
+
+              <!-- Box Body -->
+              <div class="gift-body-wrap">
+                <div class="body-ribbon-vertical"></div>
+                <div class="body-ribbon-horizontal"></div>
+                <div class="gift-body-surface">
+                  <span class="floating-glint glint-1">✦</span>
+                  <span class="floating-glint glint-2">✦</span>
+                </div>
+              </div>
+
+              <!-- Box Shadow -->
+              <div class="gift-pedestal-shadow"></div>
+            </div>
+
+            <div class="tap-badge">
+              <span class="tap-icon">🎁</span>
+              <span>Tap to Open</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==============================================
+         SCENE 2: BALLOON POPPING & SPECIAL MESSAGE
+         ============================================== -->
+    <section id="sceneBalloons" class="scene">
+      <div class="scene-header-block text-center">
+        <div class="badge-pill">
+          <span>🎈 Phase 1 • Pop to Reveal</span>
+        </div>
+        <h2 class="scene-title">Burst the Balloons!</h2>
+        <p class="scene-subtitle">
+          Every balloon carries a reason why you are cherished. Pop them all to uncover your secret message!
+        </p>
+
+        <!-- Progress Counter -->
+        <div class="balloon-progress-card">
+          <div class="progress-labels">
+            <span class="progress-status-text">Popping progress</span>
+            <span class="progress-count" id="balloonStats">0 / 6 popped</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-indicator" id="balloonProgressFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Responsive Balloon Arena -->
+      <div class="balloon-arena-wrapper">
+        <div class="balloon-arena" id="balloonArena">
+          <!-- Dynamically populated via script -->
+        </div>
+
+        <!-- Special Message Reveal Card -->
+        <div class="special-message-overlay hidden" id="specialMessageModal">
+          <div class="special-message-card">
+            <div class="card-glow-halo"></div>
+            <div class="message-icon-bubble">💖</div>
+            <h3 class="message-headline" id="revealTitle">You Are Truly One in a Million!</h3>
+            <p class="message-text" id="balloonMessageText">
+              Every pop is a reminder of all the reasons you mean the world. Your smile, your heart, and your infectious laugh make this world a so much warmer place to be.
+            </p>
+            <div class="message-ornament">
+              <span>✦</span>
+              <span class="ornament-line"></span>
+              <span>🎂</span>
+              <span class="ornament-line"></span>
+              <span>✦</span>
+            </div>
+            <p class="message-prompt">Take a deep breath... your birthday cake is arriving!</p>
+            <button id="goToCakeBtn" class="cta-btn primary-glow-btn">
+              <span>Enter The Cake Room 🎂</span>
+              <span class="arrow-glyph">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==============================================
+         SCENE 3: CAKE & CANDLE BLOWING
+         ============================================== -->
+    <section id="sceneCake" class="scene">
+      <div class="cake-room-atmosphere" id="cakeRoomAtmosphere">
+        
+        <!-- Hanging Party Garland -->
+        <div class="garland-bunting" aria-hidden="true">
+          <span class="pennant p1">✨</span>
+          <span class="pennant p2">🎉</span>
+          <span class="pennant p3">🎂</span>
+          <span class="pennant p4">💖</span>
+          <span class="pennant p5">🌟</span>
+          <span class="pennant p6">🥳</span>
+          <span class="pennant p7">✨</span>
+        </div>
+
+        <div class="scene-header-block text-center">
+          <div class="badge-pill">
+            <span>🎂 Phase 2 • Make A Wish</span>
+          </div>
+          <h2 class="scene-title" id="cakeTitle">Make a Secret Birthday Wish!</h2>
+          <p class="scene-subtitle" id="candleInstruction">
+            Blow gently into your microphone 🎙️ or tap the flickering candle flame!
+          </p>
+        </div>
+
+        <!-- Luxury Gourmet Birthday Cake Display -->
+        <div class="cake-stage-container">
+          <div class="candle-halo" id="candleAmbientHalo"></div>
+
+          <div class="cake-assembly">
+            
+            <!-- Interactive Candle & Flame -->
+            <div class="candle-unit" id="candleTrigger" role="button" tabindex="0" aria-label="Blow out candle">
+              <!-- Flame & Smoke FX -->
+              <div class="flame-element" id="candleFlame">
+                <div class="flame-outer"></div>
+                <div class="flame-core"></div>
+                <!-- Multi-wisp curling smoke particles -->
+                <div class="smoke-wisp-group" id="smokeGroup">
+                  <div class="smoke-wisp wisp-1"></div>
+                  <div class="smoke-wisp wisp-2"></div>
+                  <div class="smoke-wisp wisp-3"></div>
+                  <div class="smoke-wisp wisp-4"></div>
+                </div>
+              </div>
+              <div class="candle-wick"></div>
+              <div class="candle-pillar">
+                <div class="pillar-pattern"></div>
+              </div>
+            </div>
+
+            <!-- Cake Tiers -->
+            <div class="cake-structure">
+              <!-- Tier 1 (Top) -->
+              <div class="tier tier-top">
+                <div class="icing-dripping">
+                  <div class="drip-drop d1"></div>
+                  <div class="drip-drop d2"></div>
+                  <div class="drip-drop d3"></div>
+                  <div class="drip-drop d4"></div>
+                  <div class="drip-drop d5"></div>
+                  <div class="drip-drop d6"></div>
+                </div>
+                <div class="topping-berries">
+                  <span class="berry b1">🍓</span>
+                  <span class="sparkle-star st1">✦</span>
+                  <span class="berry b2">🍓</span>
+                  <span class="sparkle-star st2">✦</span>
+                  <span class="berry b3">🍓</span>
+                </div>
+              </div>
+
+              <!-- Tier 2 (Middle) -->
+              <div class="tier tier-middle">
+                <div class="tier-cream-swirl"></div>
+                <div class="tier-pearls"></div>
+              </div>
+
+              <!-- Tier 3 (Base) -->
+              <div class="tier tier-bottom">
+                <div class="gold-ribbon-trim"></div>
+              </div>
+
+              <!-- Cake Pedestal Stand -->
+              <div class="cake-pedestal">
+                <div class="pedestal-plate"></div>
+                <div class="pedestal-stem"></div>
+                <div class="pedestal-base"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Interaction Controls: Mic & Touch -->
+        <div class="cake-action-card" id="cakeActionCard">
+          <div class="mic-feedback-row" id="micStatusCard">
+            <div class="mic-wave-icon" id="micHalo">
+              <span>🎙️</span>
+            </div>
+            <div class="mic-info-column">
+              <span id="micStatusLabel">Microphone ready: Blow softly towards your mic!</span>
+              <div class="mic-volume-track">
+                <div class="mic-volume-bar" id="micMeterFill"></div>
+              </div>
+            </div>
+            <button id="enableMicBtn" class="glass-pill-btn mini-pill">
+              <span>Allow Mic</span>
+            </button>
+          </div>
+
+          <button id="blowCandleManualBtn" class="cta-btn secondary-btn tap-blow-btn">
+            <span>🕯️ Tap Here To Blow Candle</span>
+          </button>
+        </div>
+
+        <!-- In-Scene Celebration Card (Keeps the cake, candle & curling smoke 100% visible!) -->
+        <div class="cake-celebration-card hidden" id="cakeCelebrationCard">
+          <div class="cake-celebration-inner">
+            <div class="celebration-badge-pill">
+              <span>🎉 Wish Granted! 🌟</span>
+            </div>
+            <h3 class="celebration-live-title">Your Birthday Wish Is On Its Way!</h3>
+            <p class="celebration-live-sub">
+              Watch your candle smoke drift to the stars... Take in the moment! ✨
+            </p>
+            
+            <div class="memory-countdown-box">
+              <div class="countdown-track">
+                <div class="countdown-bar-fill" id="countdownBarFill"></div>
+              </div>
+              <div class="countdown-row">
+                <span class="countdown-label">Opening sweet memories in <strong id="countdownNumber">7</strong>s</span>
+                <button id="skipToMemoriesBtn" class="cta-btn primary-glow-btn skip-memories-btn">
+                  <span>View Memories Now →</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ==============================================
+         SCENE 4: SWEET MEMORIES & MISSING YOU LETTER
+         ============================================== -->
+    <section id="sceneMemories" class="scene">
+      <div class="scene-header-block text-center">
+        <div class="badge-pill celebration-pill">
+          <span>💝 Phase 3 • Cherished Memories</span>
+        </div>
+        <h2 class="scene-title">Sweet Memories of Us</h2>
+        <p class="scene-subtitle">
+          Moments frozen in time that always make our hearts smile.
+        </p>
+      </div>
+
+      <!-- Responsive Memories & Letter Layout -->
+      <div class="memories-layout-grid">
+        
+        <!-- Polaroids Gallery -->
+        <div class="polaroid-gallery-container" id="polaroidsContainer">
+          <!-- Dynamically rendered or fallback -->
+          <article class="polaroid-frame polaroid-left" id="polaroid1" role="button" tabindex="0" aria-label="View Memory 1">
+            <div class="washi-tape-strip tape-left"></div>
+            <div class="polaroid-inner">
+              <div class="polaroid-photo-viewport">
+                <img src="assets/memory1.jpg" alt="Sweet memory photograph 1" class="polaroid-image" id="memoryImg1" loading="lazy">
+                <div class="photo-shine"></div>
+              </div>
+              <p class="polaroid-handwriting" id="memoryCaption1">
+                "Golden hour laughs that stay forever 🌅💛"
+              </p>
+            </div>
+          </article>
+
+          <article class="polaroid-frame polaroid-right" id="polaroid2" role="button" tabindex="0" aria-label="View Memory 2">
+            <div class="washi-tape-strip tape-right"></div>
+            <div class="polaroid-inner">
+              <div class="polaroid-photo-viewport">
+                <img src="assets/memory2.jpg" alt="Sweet memory photograph 2" class="polaroid-image" id="memoryImg2" loading="lazy">
+                <div class="photo-shine"></div>
+              </div>
+              <p class="polaroid-handwriting" id="memoryCaption2">
+                "Another year older, a lifetime of joy together ✨🎂"
+              </p>
+            </div>
+          </article>
+        </div>
+
+        <!-- The "Missing You" Handwritten Letter -->
+        <article class="luxury-letter-envelope">
+          <div class="letter-stationery">
+            
+            <!-- Postage Stamp & Postmark -->
+            <div class="vintage-stamp">
+              <div class="stamp-serrated-border">
+                <span class="stamp-icon">💌</span>
+                <span class="stamp-label">SPECIAL</span>
+              </div>
+              <div class="stamp-ink-seal">BIRTHDAY MAIL</div>
+            </div>
+
+            <!-- Letter Body -->
+            <div class="letter-content">
+              <h3 class="letter-salutation">
+                <span id="letterSalutation">Dearest</span> <span class="recipient-name" id="letterRecipientName">Sarah</span>,
+              </h3>
+
+              <div id="letterParagraphsContainer">
+                <p class="letter-p">
+                  Happy, happiest Birthday! 🎂✨
+                </p>
+                <p class="letter-p">
+                  Looking back at these sweet memories reminds me of how extraordinarily lucky I am to have you in my story. From late-night laughs to the countless moments we've shared, every memory is pure gold.
+                </p>
+                <p class="letter-p letter-highlight">
+                  <strong>Missing you lots on your special day.</strong> Even if distance or busy schedules keep us apart right now, no distance could ever dim how much you mean to me. Sending you the warmest, biggest hug across the miles!
+                </p>
+                <p class="letter-p">
+                  May this brand new year bring you peaceful mornings, loud belly laughs, breathtaking dreams fulfilled, and all the love you give so freely returned to you ten-fold.
+                </p>
+              </div>
+
+              <!-- Sign-off & Wax Seal -->
+              <div class="letter-footer">
+                <div class="letter-signoff">
+                  <span id="letterSignoffText">Always cheering for you,</span>
+                  <span class="letter-handwritten-signature" id="letterSignatureText">With all my love & warmest hugs 💖</span>
+                </div>
+
+                <div class="embossed-wax-seal" aria-hidden="true">
+                  <div class="wax-ring">
+                    <span>🎂</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Action: Replay Experience (Clean and focused) -->
+      <div class="memories-bottom-actions">
+        <button id="replaySurpriseBtn" class="cta-btn primary-glow-btn">
+          <span>Celebrate Again ↺</span>
+        </button>
+      </div>
+
+      <footer class="app-footer text-center">
+        <p>Crafted with love & magic ✨ • Wishing you the happiest birthday!</p>
+      </footer>
+    </section>
+
+  </main>
+
+  <!-- Image Lightbox Modal for Full View -->
+  <div id="imageModal" class="lightbox-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="lightbox-card">
+      <button id="closeModalBtn" class="lightbox-close-btn" aria-label="Close photo preview">✕</button>
+      <img id="modalImg" src="" alt="Enlarged sweet memory" class="lightbox-photo">
+      <p id="modalCaption" class="lightbox-caption"></p>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="toast-bubble hidden" role="status" aria-live="polite"></div>
+
+  <!-- Custom/Uploaded Audio Tag (optional, config driven) -->
+  <audio id="customAudio" preload="auto" loop></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
