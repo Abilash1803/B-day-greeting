@@ -693,7 +693,7 @@ const SURPRISE_CONFIG = {
         e.preventDefault();
         e.stopPropagation();
         if (balloon.classList.contains('popping')) return;
-        popBalloon(balloon, bData.subtitle, e);
+        popBalloon(balloon, bData, e);
       };
 
       balloon.addEventListener('click', onPop);
@@ -703,7 +703,7 @@ const SURPRISE_CONFIG = {
     });
   }
 
-  function popBalloon(balloonEl, subtitleText, event) {
+  function popBalloon(balloonEl, bData, event) {
     balloonEl.classList.add('popping');
     playPopSound();
 
@@ -716,7 +716,9 @@ const SURPRISE_CONFIG = {
     const centerY = rect.top + rect.height / 2;
 
     spawnConfetti(centerX, centerY, 35);
-    showRevealedBadge(centerX, centerY, subtitleText);
+    const title = (typeof bData === 'object' && bData) ? bData.title : '';
+    const subtitle = (typeof bData === 'object' && bData) ? bData.subtitle : bData;
+    showRevealedBadge(title, subtitle);
 
     state.poppedCount++;
     updateBalloonProgress();
@@ -726,6 +728,9 @@ const SURPRISE_CONFIG = {
     // All popped -> reveal message card
     if (state.poppedCount >= state.totalBalloons) {
       setTimeout(() => {
+        const badge = document.querySelector('.revealed-badge-float');
+        if (badge) badge.remove();
+
         playFanfareSound();
         spawnConfetti(window.innerWidth / 2, window.innerHeight / 2, 70);
         el.specialMessageModal.classList.remove('hidden');
@@ -733,16 +738,37 @@ const SURPRISE_CONFIG = {
     }
   }
 
-  function showRevealedBadge(x, y, text) {
+  let activeBadgeTimer = null;
+  function showRevealedBadge(title, text) {
+    const existing = document.querySelector('.revealed-badge-float');
+    if (existing) existing.remove();
+    if (activeBadgeTimer) {
+      clearTimeout(activeBadgeTimer);
+      activeBadgeTimer = null;
+    }
+
     const badge = document.createElement('div');
     badge.className = 'revealed-badge-float';
-    badge.textContent = text;
-    badge.style.left = `${x}px`;
-    badge.style.top = `${y}px`;
-    badge.style.transform = 'translate(-50%, -50%)';
+
+    const titleHtml = title ? `<div class="revealed-badge-title">${title}</div>` : '';
+    const bodyHtml = text ? `<div class="revealed-badge-body">"${text}"</div>` : '';
+
+    badge.innerHTML = `
+      <div class="revealed-badge-sparkle">✨</div>
+      <div class="revealed-badge-content">
+        ${titleHtml}
+        ${bodyHtml}
+      </div>
+    `;
+
     document.body.appendChild(badge);
 
-    setTimeout(() => badge.remove(), 1600);
+    activeBadgeTimer = setTimeout(() => {
+      badge.classList.add('fade-out');
+      setTimeout(() => {
+        if (badge.parentNode) badge.remove();
+      }, 350);
+    }, 2800);
   }
 
   function updateBalloonProgress() {
