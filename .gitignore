@@ -1,3 +1,4 @@
+# Optional local audio
 assets/birthday.mp3
-assets/memory1.jpg
-assets/memory2.jpg
+node_modules/
+.DS_Store
