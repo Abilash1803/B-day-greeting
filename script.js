@@ -383,6 +383,8 @@ const SURPRISE_CONFIG = {
     const ctx = getAudioContext();
     if (!ctx) return;
 
+    const destination = getMusicGain() || ctx.destination;
+
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
     const gainNode = ctx.createGain();
@@ -399,7 +401,7 @@ const SURPRISE_CONFIG = {
 
     osc1.connect(gainNode);
     osc2.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(destination); // → musicGainNode → ctx.destination
 
     osc1.start(startTime);
     osc2.start(startTime);
@@ -407,16 +409,34 @@ const SURPRISE_CONFIG = {
     osc2.stop(startTime + durationSec + 0.05);
   }
 
-  function startBirthdayMusic() {
-    // Resume a previously suspended AudioContext first
-    const ctx = getAudioContext();
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume();
-    }
+  // Music master gain bus — all synth notes route through this
+  // so we can mute/unmute without touching the shared AudioContext
+  let musicGainNode = null;
 
-    stopBirthdayMusic();
+  function getMusicGain() {
+    const ctx = getAudioContext();
+    if (!ctx) return null;
+    if (!musicGainNode) {
+      musicGainNode = ctx.createGain();
+      musicGainNode.gain.setValueAtTime(0, ctx.currentTime);
+      musicGainNode.connect(ctx.destination);
+    }
+    return musicGainNode;
+  }
+
+  function startBirthdayMusic() {
+    if (state.musicPlaying) return; // already running, ignore double calls
     state.musicPlaying = true;
     updateMusicUI(true);
+
+    // Ramp music gain up smoothly
+    const ctx = getAudioContext();
+    const mg = getMusicGain();
+    if (ctx && mg) {
+      mg.gain.cancelScheduledValues(ctx.currentTime);
+      mg.gain.setValueAtTime(mg.gain.value, ctx.currentTime);
+      mg.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.25);
+    }
 
     // Try custom audio file first if configured
     if (SURPRISE_CONFIG.customAudioSrc && el.customAudio) {
@@ -424,7 +444,7 @@ const SURPRISE_CONFIG = {
       el.customAudio.play().then(() => {
         state.isUsingCustomAudio = true;
       }).catch(() => {
-        // Custom audio missing or denied, smoothly fallback to Web Audio Synth!
+        // Custom audio missing or denied — fall back to synth
         playSynthesizerLoop();
       });
     } else {
@@ -453,26 +473,31 @@ const SURPRISE_CONFIG = {
       if (state.musicPlaying && !state.isUsingCustomAudio) {
         playSynthesizerLoop();
       }
-    }, totalSongMs + 1200);
+    }, totalSongMs + 400);
   }
 
   function stopBirthdayMusic() {
+    if (!state.musicPlaying) return; // already stopped, ignore double calls
     state.musicPlaying = false;
 
-    // Pause custom audio element
+    // Ramp music gain down smoothly then clear the loop timer
+    const ctx = state.audioCtx;
+    const mg = musicGainNode;
+    if (ctx && mg) {
+      mg.gain.cancelScheduledValues(ctx.currentTime);
+      mg.gain.setValueAtTime(mg.gain.value, ctx.currentTime);
+      mg.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+    }
+
+    // Stop custom audio element
     if (el.customAudio) {
       try { el.customAudio.pause(); el.customAudio.currentTime = 0; } catch(e) {}
     }
 
-    // Cancel any pending synth loop
+    // Cancel pending loop reschedule
     if (state.synthLoopTimer) {
       clearTimeout(state.synthLoopTimer);
       state.synthLoopTimer = null;
-    }
-
-    // Suspend AudioContext — this immediately silences all in-flight scheduled notes
-    if (state.audioCtx && state.audioCtx.state === 'running') {
-      state.audioCtx.suspend();
     }
 
     updateMusicUI(false);
