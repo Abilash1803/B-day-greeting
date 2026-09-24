@@ -53,12 +53,9 @@
 
       <!-- Sound Controls -->
       <div class="audio-controls">
-        <button id="musicToggleBtn" class="glass-pill-btn music-btn" aria-label="Toggle background music">
-          <span class="music-icon">🎵</span>
-          <span id="musicStatusText">Music: On</span>
-        </button>
-        <button id="soundFxBtn" class="glass-pill-btn fx-btn" aria-label="Toggle sound effects">
-          <span class="fx-icon">🔊</span>
+        <button id="musicToggleBtn" class="glass-pill-btn music-btn" aria-label="Toggle background music" aria-pressed="false">
+          <span class="music-icon">⏸</span>
+          <span id="musicStatusText">Music: Off</span>
         </button>
       </div>
     </div>
@@ -142,9 +139,6 @@
          ============================================== -->
     <section id="sceneBalloons" class="scene">
       <div class="scene-header-block text-center">
-        <div class="badge-pill">
-          <span>🎈 Phase 1 • Pop to Reveal</span>
-        </div>
         <h2 class="scene-title">Burst the Balloons!</h2>
         <p class="scene-subtitle">
           Every balloon carries a reason why you are cherished. Pop them all to uncover your secret message!
@@ -213,9 +207,6 @@
         </div>
 
         <div class="scene-header-block text-center">
-          <div class="badge-pill">
-            <span>🎂 Phase 2 • Make A Wish</span>
-          </div>
           <h2 class="scene-title" id="cakeTitle">Make a Secret Birthday Wish!</h2>
           <p class="scene-subtitle" id="candleInstruction">
             Blow gently into your microphone 🎙️ or tap the flickering candle flame!
@@ -347,9 +338,6 @@
          ============================================== -->
     <section id="sceneMemories" class="scene">
       <div class="scene-header-block text-center">
-        <div class="badge-pill celebration-pill">
-          <span>💝 Phase 3 • Cherished Memories</span>
-        </div>
         <h2 class="scene-title">Sweet Memories of Us</h2>
         <p class="scene-subtitle">
           Moments frozen in time that always make our hearts smile.
@@ -473,5 +461,47 @@
   <audio id="customAudio" preload="auto" loop></audio>
 
   <script src="script.js"></script>
+
+  <!-- ══════════════════════════════════════════════
+       Agentation Dev Toolbar (localhost / dev only)
+       Mirrors: process.env.NODE_ENV === "development"
+       No UMD bundle exists — uses ESM dynamic import
+       ══════════════════════════════════════════════ -->
+  <script type="module">
+    // Only mount in local development — never in production
+    const hostname = window.location.hostname;
+    const isDev = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "";
+    if (!isDev) throw new Error("[Agentation] Skipped: not localhost");
+
+    // Use importmap-compatible esm.sh which resolves peer deps (React 18) automatically
+    const [{ default: React }, { default: ReactDOM }, agentationModule] = await Promise.all([
+      import("https://esm.sh/react@18"),
+      import("https://esm.sh/react-dom@18/client"),
+      import("https://esm.sh/agentation@3.1.2?deps=react@18,react-dom@18"),
+    ]);
+
+    // The named export is `Agentation`
+    const AgentationComp = agentationModule.Agentation ?? agentationModule.default;
+
+    if (!AgentationComp) {
+      console.warn("[Agentation] Component export not found. Check package version.");
+    } else {
+      const mountNode = document.createElement("div");
+      mountNode.id = "agentation-root";
+      document.body.appendChild(mountNode);
+
+      const root = ReactDOM.createRoot(mountNode);
+      root.render(
+        React.createElement(AgentationComp, {
+          endpoint: "http://localhost:4747",
+        })
+      );
+
+      console.info(
+        "%c[Agentation] ✓ Dev toolbar mounted — endpoint: http://localhost:4747",
+        "color:#a78bfa;font-weight:bold;font-size:13px"
+      );
+    }
+  </script>
 </body>
 </html>

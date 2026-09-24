@@ -96,7 +96,6 @@ const SURPRISE_CONFIG = {
     journeySteps: document.querySelectorAll('.journey-step'),
     musicToggleBtn: document.getElementById('musicToggleBtn'),
     musicStatusText: document.getElementById('musicStatusText'),
-    soundFxBtn: document.getElementById('soundFxBtn'),
     particleCanvas: document.getElementById('particleCanvas'),
     ambientStars: document.getElementById('ambientStars'),
 
@@ -409,6 +408,12 @@ const SURPRISE_CONFIG = {
   }
 
   function startBirthdayMusic() {
+    // Resume a previously suspended AudioContext first
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
     stopBirthdayMusic();
     state.musicPlaying = true;
     updateMusicUI(true);
@@ -453,13 +458,23 @@ const SURPRISE_CONFIG = {
 
   function stopBirthdayMusic() {
     state.musicPlaying = false;
+
+    // Pause custom audio element
     if (el.customAudio) {
-      try { el.customAudio.pause(); } catch(e) {}
+      try { el.customAudio.pause(); el.customAudio.currentTime = 0; } catch(e) {}
     }
+
+    // Cancel any pending synth loop
     if (state.synthLoopTimer) {
       clearTimeout(state.synthLoopTimer);
       state.synthLoopTimer = null;
     }
+
+    // Suspend AudioContext — this immediately silences all in-flight scheduled notes
+    if (state.audioCtx && state.audioCtx.state === 'running') {
+      state.audioCtx.suspend();
+    }
+
     updateMusicUI(false);
   }
 
@@ -472,9 +487,14 @@ const SURPRISE_CONFIG = {
   }
 
   function updateMusicUI(isPlaying) {
+    const iconEl = el.musicToggleBtn ? el.musicToggleBtn.querySelector('.music-icon') : null;
+    if (iconEl) iconEl.textContent = isPlaying ? '🎵' : '⏸';
     if (el.musicStatusText) el.musicStatusText.textContent = isPlaying ? 'Music: On' : 'Music: Off';
     if (el.musicToggleBtn) {
-      el.musicToggleBtn.style.background = isPlaying ? 'rgba(255, 94, 126, 0.45)' : 'rgba(255, 255, 255, 0.08)';
+      el.musicToggleBtn.style.background = isPlaying
+        ? 'rgba(255, 94, 126, 0.45)'
+        : 'rgba(255, 255, 255, 0.08)';
+      el.musicToggleBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
     }
   }
 
@@ -617,12 +637,13 @@ const SURPRISE_CONFIG = {
       { left: '42%', top: '50%' },
       { left: '76%', top: '52%' }
     ] : [
-      { left: '6%', top: '6%' },
-      { left: '56%', top: '10%' },
-      { left: '18%', top: '38%' },
-      { left: '62%', top: '42%' },
-      { left: '8%', top: '68%' },
-      { left: '54%', top: '70%' }
+      // 2-column centered grid for mobile
+      { left: '12%', top: '5%' },
+      { left: '55%', top: '5%' },
+      { left: '12%', top: '33%' },
+      { left: '55%', top: '33%' },
+      { left: '12%', top: '61%' },
+      { left: '55%', top: '61%' }
     ];
 
     SURPRISE_CONFIG.balloons.forEach((bData, idx) => {
@@ -708,16 +729,30 @@ const SURPRISE_CONFIG = {
   // =========================================================
   // SCENE 3: CANDLE BLOW DETECTOR (MIC + TOUCH)
   // =========================================================
-  async function initMicBlowDetector() {
+  async function initMicBlowDetector(fromUserGesture = false) {
     if (state.candleBlown) return;
+
+    // Mobile browsers require a direct user gesture for getUserMedia.
+    // Show the Allow Mic button and wait for a tap instead of auto-requesting.
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    if (isTouchDevice && !fromUserGesture) {
+      if (el.enableMicBtn) el.enableMicBtn.style.display = '';
+      updateMicStatus('📱 Tap "Allow Mic" to blow out the candle!', false);
+      return;
+    }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       updateMicStatus('Microphone not supported. Tap the flickering flame! 👇', false);
+      if (el.enableMicBtn) el.enableMicBtn.style.display = 'none';
       return;
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // echoCancellation: false gives cleaner breath/blow signal
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        video: false
+      });
       state.micStream = stream;
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -729,12 +764,18 @@ const SURPRISE_CONFIG = {
 
       state.micDataArray = new Uint8Array(state.micAnalyser.frequencyBinCount);
       updateMicStatus('🎙️ Listening: Blow gently into your microphone!', true);
-      el.enableMicBtn.style.display = 'none';
+      if (el.enableMicBtn) el.enableMicBtn.style.display = 'none';
 
       listenForBlow();
     } catch (err) {
       console.warn('Microphone permission not granted:', err);
-      updateMicStatus('Mic permission off. Simply tap the candle to blow! 🕯️', false);
+      updateMicStatus(
+        navigator.maxTouchPoints > 0
+          ? '🔒 Mic blocked — check browser settings or tap the candle! 🕯️'
+          : 'Mic permission off. Simply tap the candle to blow! 🕯️',
+        false
+      );
+      if (el.enableMicBtn) el.enableMicBtn.style.display = '';
     }
   }
 
@@ -889,12 +930,6 @@ const SURPRISE_CONFIG = {
       toggleMusic();
     });
 
-    el.soundFxBtn.addEventListener('click', () => {
-      state.soundFxEnabled = !state.soundFxEnabled;
-      el.soundFxBtn.querySelector('.fx-icon').textContent = state.soundFxEnabled ? '🔊' : '🔇';
-      showToast(state.soundFxEnabled ? 'Sound FX Enabled' : 'Sound FX Muted');
-    });
-
     // 2. Journey Navigation clicks
     el.journeySteps.forEach(step => {
       step.addEventListener('click', () => {
@@ -946,7 +981,7 @@ const SURPRISE_CONFIG = {
     el.blowCandleManualBtn.addEventListener('click', blowAction);
     el.enableMicBtn.addEventListener('click', () => {
       getAudioContext();
-      initMicBlowDetector();
+      initMicBlowDetector(true); // fromUserGesture = true — required on mobile
     });
 
     // 6. Scene 3: Skip to memories early button
